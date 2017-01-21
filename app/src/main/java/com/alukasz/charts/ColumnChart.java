@@ -7,8 +7,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.View;
 
-import static android.R.attr.topOffset;
-
 public class ColumnChart extends View implements Runnable {
     Context context;
 
@@ -21,9 +19,8 @@ public class ColumnChart extends View implements Runnable {
     private int canvasWidth;
     private int canvasHeight;
 
-    private final int delay = 40; // 25fps
+    private final int delay = 20; // 50fps
     private final int duration = 2000; // 2 second to draw chart
-    private float step; // percent of column to draw in 1 frame
     private int frame; // current frame;
     private int frames; // number of frames
 
@@ -35,7 +32,7 @@ public class ColumnChart extends View implements Runnable {
     private int bottomOffset;
     private int topOffset;
 
-    private int columnWidth = 50; // TODO calculate basing on offsets and canvas size
+    private int columnWidth;
     private int columnOffset = 10; // distance between columns in pair
     private int pairOffset = 40; // ditance between pairs
 
@@ -48,7 +45,6 @@ public class ColumnChart extends View implements Runnable {
         this.context = context;
         this.values = values;
 
-        step = delay / duration;
         frame = 1;
         frames = duration / delay;
 
@@ -67,6 +63,82 @@ public class ColumnChart extends View implements Runnable {
         calculateHeightPerPoint();
         calculateColumnsGrowthPerFrame();
         createColumns();
+    }
+
+    public void draw() {
+        drawing = true;
+        animator = new Thread(this);
+        animator.start();
+    }
+
+    @Override
+    public void run() {
+        while (drawing) {
+            if (frame >= frames) {
+                drawing = false;
+            } else {
+                frame = frame + 1;
+            }
+
+            postInvalidate();
+
+            updateColumns();
+
+            // Wait then execute it again
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+            }
+        }
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        canvasHeight = h;
+        canvasWidth = w;
+    }
+
+    @Override
+    public void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        drawBackground(canvas);
+
+        int count = 1;
+        for (Rect[] pair : columns) {
+            for (Rect column : pair) {
+                if (count++ % 2 == 0) {
+                    paint.setColor(Color.RED);
+                } else {
+                    paint.setColor(Color.BLUE);
+                }
+                canvas.drawRect(column, paint);
+            }
+        }
+
+        if (frame == frames) {
+            drawValue(canvas);
+        }
+    }
+
+    private void drawBackground(Canvas canvas) {
+        paint.setColor(Color.BLACK);
+        for (int i = 1; i <= maxValue; i++) {
+            int y = canvasHeight - bottomOffset - i * heightPerPoint + 9; // + 9 - try to make number on the middle of line TODO remove magic number
+            canvas.drawLine(5, y, 25, y, paint);
+            canvas.drawText(String.valueOf(i), 32, y, paint);
+        }
+    }
+
+    private void drawValue(Canvas canvas) {
+        paint.setColor(Color.BLACK);
+
+        for (int i = 0; i < values.length; i++) {
+            for (int j = 0; j < values[i].length; j++) {
+                int left = getColumnLeft(i, j) + columnWidth / 2 - 11; // - 11 try to make on the middle of column TODO remove magic number
+                int top  = getColumnTop(i, j) - 20; // -20 offset between column top and value
+                canvas.drawText(String.valueOf(values[i][j]), left, top, paint);
+            }
+        }
     }
 
     private void calculateColumnsGrowthPerFrame() {
@@ -128,71 +200,16 @@ public class ColumnChart extends View implements Runnable {
                 + (pair * 2 + column) * columnWidth; // width of all columns
     }
 
+    private int getColumnTop(int pair, int column)
+    {
+        return (int)(canvasHeight - bottomOffset - (frame * columnsGrowth[pair][column]));
+    }
+
     private void updateColumns() {
         for (int i = 0; i < columns.length; i++) {
             for (int j = 0; j < columns[i].length; j++) {
-                columns[i][j].top = (int)(canvasHeight - bottomOffset - (frame * columnsGrowth[i][j]));
+                columns[i][j].top = getColumnTop(i, j);
             }
-        }
-    }
-
-    public void draw() {
-        drawing = true;
-        animator = new Thread(this);
-        animator.start();
-    }
-
-    @Override
-    public void run() {
-        while (drawing) {
-            if (frame >= frames) {
-                drawing = false;
-            } else {
-                frame = frame + 1;
-            }
-
-            postInvalidate();
-
-            updateColumns();
-
-            // Wait then execute it again
-            try {
-                Thread.sleep(delay);
-            } catch (InterruptedException e) {
-            }
-        }
-    }
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        canvasHeight = h;
-        canvasWidth = w;
-    }
-
-    @Override
-    public void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        drawBackground(paint, canvas);
-
-        int count = 1;
-        for (Rect[] pair : columns) {
-            for (Rect column : pair) {
-                if (count++ % 2 == 0) {
-                    paint.setColor(Color.RED);
-                } else {
-                    paint.setColor(Color.BLUE);
-                }
-                canvas.drawRect(column, paint);
-            }
-        }
-    }
-
-    private void drawBackground(Paint paint, Canvas canvas) {
-        paint.setColor(Color.BLACK);
-        for (int i = 1; i <= maxValue; i++) {
-            int y = canvasHeight - bottomOffset - i * heightPerPoint;
-            canvas.drawLine(5, y, 25, y, paint);
-            canvas.drawText(String.valueOf(i), 32, y + 9, paint); // + 9 - try to make number on the middle of line
         }
     }
 }
