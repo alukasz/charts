@@ -16,7 +16,7 @@ public class ColumnChart extends View implements Runnable {
 
     int[][] values;
     Rect[][] columns;
-    int[][] columnsGrowth; // how much each column will grow in frame
+    float[][] columnsGrowth; // how much each column will grow in frame
 
     private int canvasWidth;
     private int canvasHeight;
@@ -70,10 +70,10 @@ public class ColumnChart extends View implements Runnable {
     }
 
     private void calculateColumnsGrowthPerFrame() {
-        columnsGrowth = new int[values.length][2];
+        columnsGrowth = new float[values.length][2];
         for (int i = 0; i < values.length; i++) {
             for (int j = 0; j < values[i].length; j++) {
-                columnsGrowth[i][j] = values[i][j] * heightPerPoint / frames;
+                columnsGrowth[i][j] = values[i][j] * heightPerPoint / (float)frames;
             }
         }
     }
@@ -99,6 +99,7 @@ public class ColumnChart extends View implements Runnable {
 
             int left = getColumnLeft(i, 0);
             int right = left + columnWidth;
+
             Rect column_one = new Rect(left, top, right, bottom);
             columns[i][0] = column_one;
 
@@ -130,7 +131,7 @@ public class ColumnChart extends View implements Runnable {
     private void updateColumns() {
         for (int i = 0; i < columns.length; i++) {
             for (int j = 0; j < columns[i].length; j++) {
-                columns[i][j].top = columns[i][j].top  - columnsGrowth[i][j];
+                columns[i][j].top = (int)(canvasHeight - bottomOffset - (frame * columnsGrowth[i][j]));
             }
         }
     }
@@ -171,7 +172,6 @@ public class ColumnChart extends View implements Runnable {
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
         drawBackground(paint, canvas);
 
         int count = 1;
@@ -187,13 +187,12 @@ public class ColumnChart extends View implements Runnable {
         }
     }
 
-    // Called by onDraw to draw the background
     private void drawBackground(Paint paint, Canvas canvas) {
         paint.setColor(Color.BLACK);
         for (int i = 1; i <= maxValue; i++) {
             int y = canvasHeight - bottomOffset - i * heightPerPoint;
             canvas.drawLine(5, y, 25, y, paint);
-            canvas.drawText(String.valueOf(i), 40, y + 9, paint); // + 9 - try to make number on the middle of line
+            canvas.drawText(String.valueOf(i), 32, y + 9, paint); // + 9 - try to make number on the middle of line
         }
     }
 }

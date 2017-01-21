@@ -24,6 +24,7 @@ public class ColumnChartActivity extends AppCompatActivity {
                 if (parseChartValues(textChartValues.getText().toString()));
                 {
                     LinearLayout chartContainer = (LinearLayout) findViewById(R.id.chartContainer);
+                    chartContainer.removeAllViews();
 
                     ColumnChart columnChart = new ColumnChart(ColumnChartActivity.this, chartValues,
                             chartContainer.getWidth(), chartContainer.getHeight());
