@@ -2,6 +2,7 @@ package com.alukasz.charts;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.View;
@@ -13,6 +14,7 @@ public class ColumnChart extends View implements Runnable {
 
     int[][] values;
     Rect[][] columns;
+    int[][] columnsGrowth; // how much each column will grow in frame
 
     private int canvasWidth;
     private int canvasHeight;
@@ -27,10 +29,15 @@ public class ColumnChart extends View implements Runnable {
 
     private Paint paint;
 
+    private int leftOffset;
+    private int bottomOffset;
 
     private int columnWidth = 50; // TODO calculate basing on offsets and canvas size
     private int columnOffset = 10; // distance between columns in pair
-    private int pairOffset = 30; // ditance between pairs
+    private int pairOffset = 40; // ditance between pairs
+
+    private int maxValue;
+    private int heightPerPoint;
 
 
     public ColumnChart(Context context, int[][] values, int width, int height) {
@@ -49,27 +56,58 @@ public class ColumnChart extends View implements Runnable {
 
         canvasWidth = width;
         canvasHeight = height;
+        leftOffset = width / 10;
+        bottomOffset = leftOffset;
 
         calculateColumnWidth();
+        calculateHeightPerPoint();
+        calculateColumnsGrowth();
         createColumns();
+    }
+
+    private void calculateColumnsGrowth() {
+        columnsGrowth = new int[values.length][2];
+        for (int i = 0; i < values.length; i++) {
+            for (int j = 0; j < values[i].length; j++) {
+                columnsGrowth[i][j] = values[i][j] * heightPerPoint / frames;
+            }
+        }
+    }
+
+    private void calculateHeightPerPoint() {
+        int max = 0;
+        for (int[] pair : values) {
+            for (int value : pair)
+                if (value > max) {
+                    max = value;
+                }
+        }
+
+        maxValue = max;
+        heightPerPoint = (canvasHeight - bottomOffset * 2) / max;
     }
 
     private void createColumns() {
         columns = new Rect[values.length][2];
         for (int i = 0; i < values.length; i++) {
+            int bottom = canvasHeight - bottomOffset;
+            int top = bottom - 100;
+
             int left = getColumnLeft(i, 0);
-            Rect column_one = new Rect(left, canvasHeight - 100, left + columnWidth, canvasHeight);
+            int right = left + columnWidth;
+            Rect column_one = new Rect(left, top, right, bottom);
             columns[i][0] = column_one;
 
             left = getColumnLeft(i, 1);
-            Rect column_two = new Rect(left, canvasHeight - 100, left + columnWidth, canvasHeight);
+            right = left + columnWidth;
+            Rect column_two = new Rect(left, top, right, bottom);
             columns[i][1] = column_two;
         }
     }
 
     private void calculateColumnWidth()
     {
-        int drawingWidth = canvasWidth - 20; // left remove offset
+        int drawingWidth = canvasWidth - leftOffset; // left remove offset
 
         int pairs = values.length;
         int pairsTotalOffset = (pairs - 1) * pairOffset;
@@ -79,7 +117,7 @@ public class ColumnChart extends View implements Runnable {
     }
 
     private int getColumnLeft(int pair, int column) {
-        return 20 // initial offset
+        return leftOffset // initial offset
                 + pair * pairOffset // offest between pairs
                 + (pair + column) * columnOffset // offset between columns
                 + (pair * 2 + column) * columnWidth; // width of all columns
@@ -88,7 +126,7 @@ public class ColumnChart extends View implements Runnable {
     private void updateColumns() {
         for (int i = 0; i < columns.length; i++) {
             for (int j = 0; j < columns[i].length; j++) {
-                columns[i][j].top = columns[i][j].top - 2;
+                columns[i][j].top = columns[i][j].top  - columnsGrowth[i][j];
             }
         }
     }
@@ -112,8 +150,6 @@ public class ColumnChart extends View implements Runnable {
 
             updateColumns();
 
-
-
             // Wait then execute it again
             try {
                 Thread.sleep(delay);
@@ -134,8 +170,14 @@ public class ColumnChart extends View implements Runnable {
 
         drawBackground(paint, canvas);
 
+        int count = 1;
         for (Rect[] pair : columns) {
             for (Rect column : pair) {
+                if (count++ % 2 == 0) {
+                    paint.setColor(Color.RED);
+                } else {
+                    paint.setColor(Color.BLUE);
+                }
                 canvas.drawRect(column, paint);
             }
         }
@@ -143,6 +185,5 @@ public class ColumnChart extends View implements Runnable {
 
     // Called by onDraw to draw the background
     private void drawBackground(Paint paint, Canvas canvas) {
-
     }
 }
