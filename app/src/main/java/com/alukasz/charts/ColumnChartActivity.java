@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 public class ColumnChartActivity extends AppCompatActivity {
@@ -22,7 +23,13 @@ public class ColumnChartActivity extends AppCompatActivity {
                 EditText textChartValues = (EditText) findViewById(R.id.textChartValues);
                 if (parseChartValues(textChartValues.getText().toString()));
                 {
-                    // run sth
+                    LinearLayout chartContainer = (LinearLayout) findViewById(R.id.chartContainer);
+
+                    ColumnChart columnChart = new ColumnChart(ColumnChartActivity.this, chartValues,
+                            chartContainer.getWidth(), chartContainer.getHeight());
+
+                    chartContainer.addView(columnChart);
+                    columnChart.draw();
                 }
             }
         });

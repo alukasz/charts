@@ -15,6 +15,7 @@
         android:layout_height="wrap_content"
         android:inputType="textPersonName"
         android:ems="10"
+        android:text="5:3,1:2"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
@@ -31,4 +32,11 @@
         android:layout_alignParentEnd="true"
         android:id="@+id/btnDraw"
         android:layout_alignBottom="@+id/textChartValues" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="50dp"
+        android:id="@+id/chartContainer"
+        android:orientation="horizontal"/>
 </RelativeLayout>
