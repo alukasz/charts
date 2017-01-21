@@ -12,9 +12,10 @@ public class ColumnChart extends View implements Runnable {
 
     private Thread animator;
 
-    int[][] values;
-    Rect[][] columns;
-    float[][] columnsGrowth; // how much each column will grow in frame
+    private int[][] values;
+    private Rect[][] columns;
+    private float[][] columnsGrowth; // how much each column will grow in frame
+    private int step = 1; // step on vertical values
 
     private int canvasWidth;
     private int canvasHeight;
@@ -57,7 +58,7 @@ public class ColumnChart extends View implements Runnable {
         canvasHeight = height;
         leftOffset = width / 10;
         bottomOffset = leftOffset;
-        topOffset = 50;
+        topOffset = 45;
 
         calculateColumnWidth();
         calculateHeightPerPoint();
@@ -122,10 +123,17 @@ public class ColumnChart extends View implements Runnable {
 
     private void drawBackground(Canvas canvas) {
         paint.setColor(Color.BLACK);
-        for (int i = 1; i <= maxValue; i++) {
+
+        for (int i = step; i <= maxValue; i = i + step) {
             int y = canvasHeight - bottomOffset - i * heightPerPoint + 9; // + 9 - try to make number on the middle of line TODO remove magic number
             canvas.drawLine(5, y, 25, y, paint);
             canvas.drawText(String.valueOf(i), 32, y, paint);
+        }
+
+        for (int i = 0; i < values.length; i++) {
+            int top = canvasHeight - bottomOffset / 2;
+            int left = getColumnLeft(i, 0) + columnWidth + columnOffset / 2 - 8; // -8 - try to make number on the middle of group TODO remove magic number
+            canvas.drawText(String.valueOf((char) (i + 65)), left, top, paint);
         }
     }
 
@@ -160,7 +168,15 @@ public class ColumnChart extends View implements Runnable {
         }
 
         maxValue = max;
-        heightPerPoint = (canvasHeight - bottomOffset - topOffset) / max;
+        step = maxValue / 10 + 1;
+        if (step % 2 != 0) {
+            step += 1; // i don't like odd step :(
+        }
+        while (maxValue % step != 0) {
+            maxValue += 1;
+        }
+
+        heightPerPoint = (canvasHeight - bottomOffset - topOffset) / maxValue;
     }
 
     private void createColumns() {
