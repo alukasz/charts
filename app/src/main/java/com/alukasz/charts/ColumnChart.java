@@ -7,6 +7,8 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.View;
 
+import static android.R.attr.topOffset;
+
 public class ColumnChart extends View implements Runnable {
     Context context;
 
@@ -31,6 +33,7 @@ public class ColumnChart extends View implements Runnable {
 
     private int leftOffset;
     private int bottomOffset;
+    private int topOffset;
 
     private int columnWidth = 50; // TODO calculate basing on offsets and canvas size
     private int columnOffset = 10; // distance between columns in pair
@@ -51,21 +54,22 @@ public class ColumnChart extends View implements Runnable {
 
         paint = new Paint();
         paint.setAntiAlias(true);
-        paint.setTextSize(14);
+        paint.setTextSize(24);
         paint.setStrokeWidth(1);
 
         canvasWidth = width;
         canvasHeight = height;
         leftOffset = width / 10;
         bottomOffset = leftOffset;
+        topOffset = 50;
 
         calculateColumnWidth();
         calculateHeightPerPoint();
-        calculateColumnsGrowth();
+        calculateColumnsGrowthPerFrame();
         createColumns();
     }
 
-    private void calculateColumnsGrowth() {
+    private void calculateColumnsGrowthPerFrame() {
         columnsGrowth = new int[values.length][2];
         for (int i = 0; i < values.length; i++) {
             for (int j = 0; j < values[i].length; j++) {
@@ -84,14 +88,14 @@ public class ColumnChart extends View implements Runnable {
         }
 
         maxValue = max;
-        heightPerPoint = (canvasHeight - bottomOffset * 2) / max;
+        heightPerPoint = (canvasHeight - bottomOffset - topOffset) / max;
     }
 
     private void createColumns() {
         columns = new Rect[values.length][2];
         for (int i = 0; i < values.length; i++) {
             int bottom = canvasHeight - bottomOffset;
-            int top = bottom - 100;
+            int top = bottom;
 
             int left = getColumnLeft(i, 0);
             int right = left + columnWidth;
@@ -185,5 +189,11 @@ public class ColumnChart extends View implements Runnable {
 
     // Called by onDraw to draw the background
     private void drawBackground(Paint paint, Canvas canvas) {
+        paint.setColor(Color.BLACK);
+        for (int i = 1; i <= maxValue; i++) {
+            int y = canvasHeight - bottomOffset - i * heightPerPoint;
+            canvas.drawLine(5, y, 25, y, paint);
+            canvas.drawText(String.valueOf(i), 40, y + 9, paint); // + 9 - try to make number on the middle of line
+        }
     }
 }
