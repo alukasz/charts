@@ -12,10 +12,12 @@ public class ColumnChart extends View implements Runnable {
 
     private Thread animator;
 
+    // these should be an object
     private int[][] values;
     private Rect[][] columns;
     private float[][] columnsGrowth; // how much each column will grow in frame
-    private int step = 1; // step on vertical values
+
+    private int step = 1; // step on vertical scale
 
     private int canvasWidth;
     private int canvasHeight;
@@ -37,8 +39,8 @@ public class ColumnChart extends View implements Runnable {
     private int columnOffset = 10; // distance between columns in pair
     private int pairOffset = 40; // ditance between pairs
 
-    private int maxValue;
-    private int heightPerPoint;
+    private int maxValue; // max value on vertical scale
+    private int heightPerPoint; // how much px is 1 value
 
 
     public ColumnChart(Context context, int[][] values, int width, int height) {
@@ -81,11 +83,11 @@ public class ColumnChart extends View implements Runnable {
                 frame = frame + 1;
             }
 
+            // re-draw
             postInvalidate();
 
             updateColumns();
 
-            // Wait then execute it again
             try {
                 Thread.sleep(delay);
             } catch (InterruptedException e) {
@@ -200,7 +202,7 @@ public class ColumnChart extends View implements Runnable {
 
     private void calculateColumnWidth()
     {
-        int drawingWidth = canvasWidth - leftOffset; // left remove offset
+        int drawingWidth = canvasWidth - leftOffset; // remove left offset
 
         int pairs = values.length;
         int pairsTotalOffset = (pairs - 1) * pairOffset;
