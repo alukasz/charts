@@ -27,7 +27,14 @@ public class ColumnChart extends View implements Runnable {
     private int frame; // current frame;
     private int frames; // number of frames
 
-    private boolean drawing = false; //
+    private int bounceDuration = 2000;
+    private int bounceFrame = 0;
+    private int bounceFrames;
+    private int bounceAmplitude = 25; // max amplitude of bounce
+    private double bounces = 1.5; // number of bounces
+
+    private boolean drawing = false; // true when columns are growing
+    private boolean bouncing = false; // true when columns are bouncing
 
     private Paint paint;
 
@@ -50,6 +57,8 @@ public class ColumnChart extends View implements Runnable {
 
         frame = 1;
         frames = duration / delay;
+
+        bounceFrames = bounceDuration / delay;
 
         paint = new Paint();
         paint.setAntiAlias(true);
@@ -82,12 +91,24 @@ public class ColumnChart extends View implements Runnable {
             } else {
                 frame = frame + 1;
             }
-
             // re-draw
             postInvalidate();
-
             updateColumns();
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+            }
+        }
 
+        while (bouncing) {
+            if (bounceFrame >= bounceFrames) {
+                bouncing = false;
+            } else {
+                bounceFrame = bounceFrame + 1;
+            }
+            // re-draw
+            postInvalidate();
+            bounce();
             try {
                 Thread.sleep(delay);
             } catch (InterruptedException e) {
@@ -95,6 +116,8 @@ public class ColumnChart extends View implements Runnable {
         }
     }
 
+    
+    
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         canvasHeight = h;
@@ -120,6 +143,15 @@ public class ColumnChart extends View implements Runnable {
 
         if (frame == frames) {
             drawValue(canvas);
+            setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    bounceFrame = 0;
+                    bouncing = true;
+                    animator = new Thread(ColumnChart.this);
+                    animator.start();
+                }
+            });
         }
     }
 
@@ -145,7 +177,7 @@ public class ColumnChart extends View implements Runnable {
         for (int i = 0; i < values.length; i++) {
             for (int j = 0; j < values[i].length; j++) {
                 int left = getColumnLeft(i, j) + columnWidth / 2 - 11; // - 11 try to make on the middle of column TODO remove magic number
-                int top  = getColumnTop(i, j) - 20; // -20 offset between column top and value
+                int top  = getColumnTop(i, j) - 20 + getBounce(); // -20 offset between column top and value
                 canvas.drawText(String.valueOf(values[i][j]), left, top, paint);
             }
         }
@@ -223,10 +255,25 @@ public class ColumnChart extends View implements Runnable {
         return (int)(canvasHeight - bottomOffset - (frame * columnsGrowth[pair][column]));
     }
 
+    private int getBounce()
+    {
+        double angle = (360.0 * bounces / bounceFrames) * bounceFrame;
+
+        return (int) (Math.sin(Math.toRadians(angle)) * bounceAmplitude);
+    }
+
     private void updateColumns() {
         for (int i = 0; i < columns.length; i++) {
             for (int j = 0; j < columns[i].length; j++) {
                 columns[i][j].top = getColumnTop(i, j);
+            }
+        }
+    }
+
+    private void bounce() {
+        for (int i = 0; i < columns.length; i++) {
+            for (int j = 0; j < columns[i].length; j++) {
+                columns[i][j].top = getColumnTop(i, j) + getBounce();
             }
         }
     }
